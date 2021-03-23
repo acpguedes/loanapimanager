@@ -17,7 +17,11 @@ from django.contrib import admin
 from django.urls import path
 from loanapi.core import views
 
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls, name='admin'),
     path('hello/', views.HelloView.as_view(), name='hello'),
+    path('api-token-auth/', views.CustomAuthToken.as_view(), name='token'),
+    path('json/loans/', views.LoanView.as_view(), name='loans'),
+    path('json/payments/', views.PaymentView.as_view(), name='payments'),
 ]
