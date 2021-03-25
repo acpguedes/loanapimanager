@@ -25,4 +25,3 @@ class PaymentSerializer(ModelSerializer):
             'LoanIDRef',
             'ClientIDRef'
         )
-

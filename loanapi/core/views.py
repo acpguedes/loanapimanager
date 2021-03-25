@@ -1,12 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth import logout
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.reverse import reverse
 from rest_framework.views import APIView
 
 from .forms import LoanForm, PaymentForm
@@ -23,18 +23,8 @@ class CustomAuthToken(ObtainAuthToken):
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
         return Response({
-            'token': token.key,
-            'user_id': user.pk,
-            'email': user.email
+            'token': token.key
         })
-
-
-class HelloView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def get(self, request):
-        content = {'message': 'Hello, World!'}
-        return Response(content)
 
 
 class LoanView(APIView):
@@ -75,45 +65,51 @@ def logout_request(request):
     return redirect("main:homepage")
 
 
+@csrf_exempt
 def create_loan(request):
     permission_classes = (IsAuthenticated,)
+    context = {}
     if request.method == 'POST':
         form = LoanForm(request.POST)
-        import pdb;
-        pdb.set_trace()
-
-        #        form = form.cleaned_data
-        # form['ClientIDRef'] = request.user.username
-        form_new = form.save(commit=False)
-        user = request.user
-        form_new.ClientIDRef = user
-        import pdb;
-        pdb.set_trace()
-        form = LoanForm(form_new)
-        import pdb;
-        pdb.set_trace()
-
         if form.is_valid():
-            loan = form.save()
-            return HttpResponseRedirect(reverse('home'))
+            client_ip = request.META['REMOTE_ADDR']
+            loan = form.save(commit=False)
+            loan.ClientIDRef = request.user
+            loan.ipAddress = client_ip
+            loan.save()
+            return render(request, "home.html")
         else:
-            form = LoanForm()
+            return HttpResponse('Something went wrong')
     else:
         form = LoanForm()
-    return render(request, 'create.html', {
-        'form': form,
-    })
+        context = {
+            'form': form,
+        }
+        return render(request, 'create.html', context)
 
 
+def load_loans(request):
+    user = request.user
+    loans = Loan.objects.filter(ClientIDRef=user)
+    return render(request, 'hr/loans_dropdown.html', {'Loans': loans})
+
+
+@csrf_exempt
 def create_payment(request):
     permission_classes = (IsAuthenticated,)
+    context = {}
     if request.method == 'POST':
-        form = PaymentForm(request.POST)
+        form = PaymentForm(request.user, request.POST)
         if form.is_valid():
-            pay = form.save(commit=False)
-            pay.user = request.user
-            pay.save()
-            return HttpResponseRedirect(reverse('home'))
-    return render(request, 'create.html', {
-        'form': PaymentForm,
-    })
+            payment = form.save(commit=False)
+            payment.ClientIDRef = request.user
+            payment.save()
+            return render(request, "home.html")
+        else:
+            return HttpResponse('Something went wrong')
+    else:
+        form = PaymentForm(request.user)
+        context = {
+            'form': form,
+        }
+        return render(request, 'create.html', context)

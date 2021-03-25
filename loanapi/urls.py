@@ -33,6 +33,6 @@ urlpatterns = [
     path('api-token-auth/', views.CustomAuthToken.as_view(), name='token'),
     path('json/loans/', views.LoanView.as_view(), name='loans'),
     path('json/payments/', views.PaymentView.as_view(), name='payments'),
-    path('create/loan', views.create_loan, name='loancreator'),
-    path('create/payment', views.create_payment, name='paymentcreator'),
+    path('create/loan/', views.create_loan, name='createloan'),
+    path('create/payment/', views.create_payment, name='createpayment'),
 ]

@@ -1,0 +1,4 @@
+<option value="">---------</option>
+{% for loan in loans %}
+<option value="{{ loan.pk }}">{{ loan.LoanID }}</option>
+{% endfor %}

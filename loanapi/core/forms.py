@@ -9,12 +9,11 @@ class LoanForm(ModelForm):
     class Meta:
         model = Loan
         fields = '__all__'
-        exclude = ['ClientIDRef']
+        exclude = ['ClientIDRef', 'ipAddress']
 
     LoanNominalValue = forms.FloatField()
     MonthlyFees = forms.FloatField(max_value=100, min_value=0)
     IOF = forms.FloatField(max_value=100, min_value=0)
-    ipAddress = forms.GenericIPAddressField()
     LoanRequestDay = forms.DateField()
     Bank = forms.TextInput
     helper = FormHelper()
@@ -24,6 +23,12 @@ class PaymentForm(ModelForm):
     class Meta:
         model = Payment
         fields = '__all__'
+        exclude = ['ClientIDRef']
 
-    PaymentValue = forms.FloatField()
-    PaymentDay = forms.DateField()
+    helper = FormHelper()
+
+    def __init__(self, user, *args, **kwargs):
+        super(PaymentForm, self).__init__(*args, **kwargs)
+        self.fields['LoanIDRef'] = forms.ModelChoiceField(
+            queryset=Loan.objects.filter(ClientIDRef=user)
+        )
