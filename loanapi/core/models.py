@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -14,15 +16,16 @@ class Loan(models.Model):
         primary_key=True,
         unique=True,
         max_length=32,
-        editable=False
+        editable=False,
+        null=False
     )
-    LoanNominalValue = models.DecimalField(decimal_places=2, max_digits=10)
-    MonthlyFees = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(100)])
+    LoanNominalValue = models.DecimalField(decimal_places=2, max_digits=10, default=0)
+    MonthlyFees = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(100)], default=0)
     IOF = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(100)], default=0)
-    ipAddress = models.GenericIPAddressField()
-    LoanRequestDay = models.DateField()
-    Bank = models.TextField()
-    ClientIDRef = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    ipAddress = models.GenericIPAddressField(default='0.0.0.0')
+    LoanRequestDay = models.DateField(default=datetime.now)
+    Bank = models.TextField(default='')
+    ClientIDRef = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
 
     objects = models.Manager()
 
@@ -31,18 +34,14 @@ class Loan(models.Model):
 
 
 class Payment(models.Model):
-    PaymentValue = models.DecimalField(decimal_places=2, max_digits=10)
-    PaymentDay = models.DateField()
+    PaymentValue = models.DecimalField(decimal_places=2, max_digits=10, default=0)
+    PaymentDay = models.DateField(
+        default=datetime.now
+    )
     LoanIDRef = models.ForeignKey(
         Loan,
         on_delete=models.CASCADE,
-        related_name="+"
-    )
-    ClientIDRef = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True
+        null=True, blank=True
     )
 
     objects = models.Manager()

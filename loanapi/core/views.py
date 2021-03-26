@@ -1,6 +1,8 @@
+from datetime import date
+
 from django.contrib import messages
 from django.contrib.auth import logout
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.authtoken.models import Token
@@ -10,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .forms import LoanForm, PaymentForm
+from .functions import LoanCalc
 from .models import Loan, Payment
 from .serializers import LoanSerializer, PaymentSerializer
 
@@ -35,6 +38,14 @@ class LoanView(APIView):
         user = self.request.user
         content = Loan.objects.filter(ClientIDRef=user).values()
         content_list = list(content)
+        for loan in content_list:
+            loan_calc = LoanCalc(user, loan['LoanID'])
+            loan.update(
+                {
+                    'remaininga_amount': loan_calc.remaining_amount(),
+                    'pro_rata': loan_calc.pro_rata_die()
+                }
+            )
         return JsonResponse(content_list, safe=False)
 
 
@@ -88,12 +99,6 @@ def create_loan(request):
         return render(request, 'create.html', context)
 
 
-def load_loans(request):
-    user = request.user
-    loans = Loan.objects.filter(ClientIDRef=user)
-    return render(request, 'hr/loans_dropdown.html', {'Loans': loans})
-
-
 @csrf_exempt
 def create_payment(request):
     permission_classes = (IsAuthenticated,)
@@ -103,10 +108,14 @@ def create_payment(request):
         if form.is_valid():
             payment = form.save(commit=False)
             payment.ClientIDRef = request.user
+            loan = Loan.objects.filter(ClientIDRef=request.user).get(LoanID=payment.LoanIDRef)
+            loanday = getattr(loan, 'LoanRequestDay')
+            if payment.PaymentDay < loanday or payment.PaymentDay > date.today():
+                return HttpResponseBadRequest('The payment day must be after the contract.')
             payment.save()
             return render(request, "home.html")
         else:
-            return HttpResponse('Something went wrong')
+            return HttpResponseBadRequest('Something went wrong')
     else:
         form = PaymentForm(request.user)
         context = {

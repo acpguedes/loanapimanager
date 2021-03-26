@@ -10,7 +10,21 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/loanapi/core/functions.py">
+          <value>
+            <Attribute>
+              <option name="separator" value=":" />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/loanapi/core/models.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/loanapi/core/tests.py">
           <value>
             <Attribute>
               <option name="separator" value="," />
